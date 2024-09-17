@@ -8,23 +8,31 @@ import { IParamsFilter } from '../params-filter/interfaces/params.filter.interfa
 
 @Injectable()
 export class RbacService implements IRbac {
+  // Конструктор класса, принимающий сервис StorageRbacService.
+  // Этот сервис предположительно предоставляет доступ к хранилищу данных RBAC, таким как роли, разрешения и фильтры.
+  constructor(private readonly storageRbacService: StorageRbacService) {}
 
-    constructor(
-        private readonly storageRbacService: StorageRbacService,
-    ) {
+  // Асинхронный метод для получения объекта роли.
+  async getRole(
+    role: string,
+    paramsFilter?: IParamsFilter,
+  ): Promise<IRoleRbac> {
+    // Получение данных о ролях и разрешениях из хранилища.
+    const storage = await this.storageRbacService.getStorage();
+
+    // Проверка существования запрашиваемой роли в хранилище.
+    if (!storage.roles || !storage.roles.includes(role)) {
+      // Если роль не найдена, выбрасывается исключение RbacExceptions.
+      throw new RbacExceptions('There is no exist a role.');
     }
 
-    async getRole(role: string, paramsFilter?: IParamsFilter): Promise<IRoleRbac> {
-        const storage = await this.storageRbacService.getStorage();
-        if (!storage.roles || !storage.roles.includes(role)) {
-            throw new RbacExceptions('There is no exist a role.');
-        }
-
-        return new RoleRbac(
-            role,
-            await this.storageRbacService.getGrant(role),
-            await this.storageRbacService.getFilters(),
-            paramsFilter,
-        );
-    }
+    // Создание и возвращение нового объекта RoleRbac с данными о роли, разрешениях и фильтрах.
+    // RoleRbac - это класс, который реализует интерфейс IRoleRbac.
+    return new RoleRbac(
+      role,
+      await this.storageRbacService.getGrant(role), // Получение разрешений для роли.
+      await this.storageRbacService.getFilters(), // Получение фильтров.
+      paramsFilter, // Передача фильтра параметров, если он предоставлен.
+    );
+  }
 }
